@@ -3,22 +3,27 @@
     "id": "sample-1",
     "date": "2026-08-12",
     "restaurant": "Golden Court Seafood",
-    "dishes": ["Har Gow", "Char Siu Bao", "Turnip Cake"],
-    "rating": 4,
-    "lat": 49.2608,
-    "lng": -123.1139,
-    "notes": "Har gow wrappers were thin and didn't tear. Char siu bao a touch too sweet for my taste but the crowd loved it. Would come back for the turnip cake alone.",
-    "images": []
+    "address": "1495 W Broadway, Vancouver, BC",
+    "lat": 49.2626,
+    "lng": -123.1305,
+    "dishes": [
+      { "name": "Har Gow", "thoughts": "Wrappers were thin and didn't tear. Best I've had this year.", "images": [] },
+      { "name": "Char Siu Bao", "thoughts": "A touch too sweet for me, but the table loved it.", "images": [] },
+      { "name": "Turnip Cake", "thoughts": "Crispy edges, soft center. Would come back for this alone.", "images": [] }
+    ],
+    "notes": "Busy Sunday crowd, cart service was fast. Solid choice for a group."
   },
   {
     "id": "sample-2",
     "date": "2026-07-30",
     "restaurant": "Jade Dynasty",
-    "dishes": ["Rice Noodle Roll", "Chicken Feet", "Egg Tart"],
-    "rating": 3,
+    "address": "2837 Cambie St, Vancouver, BC",
     "lat": 49.2497,
-    "lng": -123.1193,
-    "notes": "Solid but unremarkable. Egg tart crust was flaky and warm though, no complaints there. Service was slow on a Sunday.",
-    "images": []
+    "lng": -123.1157,
+    "dishes": [
+      { "name": "Rice Noodle Roll", "thoughts": "Sauce was a little thin, noodle texture was good though.", "images": [] },
+      { "name": "Egg Tart", "thoughts": "Flaky crust, still warm. No complaints.", "images": [] }
+    ],
+    "notes": "Unremarkable overall but the egg tart redeemed it. Service was slow."
   }
 ]
