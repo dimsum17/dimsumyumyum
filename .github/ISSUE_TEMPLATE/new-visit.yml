@@ -7,8 +7,8 @@ body:
     id: date
     attributes:
       label: Date
-      description: Format YYYY-MM-DD
-      placeholder: "2026-08-25"
+      description: Type it however feels natural, e.g. November 1, 2025
+      placeholder: "November 1, 2025"
     validations:
       required: true
 
@@ -33,10 +33,9 @@ body:
     attributes:
       label: Dishes
       description: >
-        This is your "add dish" box — one dish per block. For each dish: type the
-        dish name on its own line, then drag/paste its photo right under that (optional),
-        then your thoughts. Leave a blank line, then start the next dish the same way.
-        Add as many dishes as you tried.
+        One dish per block. Type the dish name, paste its photo, and write what
+        you thought — in any order that feels natural. Leave a blank line, then
+        start the next dish the same way. Add as many as you tried.
       placeholder: |
         Har Gow
         [paste photo here]
