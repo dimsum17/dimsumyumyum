@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   add-entry:
-    if: contains(github.event.issue.labels.*.name, 'visit')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +20,13 @@ jobs:
           script: |
             const fs = require('fs');
             const body = context.payload.issue.body || "";
+
+            // Only process issues that actually came from the New Visit form —
+            // detected by the presence of this field, not by a label.
+            if (!body.includes("### Restaurant name")) {
+              console.log("Not a visit submission, skipping.");
+              return;
+            }
 
             function field(label) {
               const re = new RegExp(`### ${label}\\s*\\n\\s*([\\s\\S]*?)(?=\\n### |$)`, "i");
@@ -107,6 +113,7 @@ jobs:
           git push
 
       - name: Close issue
+        if: contains(github.event.issue.body, '### Restaurant name')
         uses: actions/github-script@v7
         with:
           script: |
