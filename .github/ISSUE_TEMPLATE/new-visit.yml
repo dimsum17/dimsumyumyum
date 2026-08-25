@@ -1,0 +1,57 @@
+name: New Visit
+description: Log a new restaurant visit
+title: "[visit] "
+labels: ["visit"]
+body:
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      description: Format YYYY-MM-DD
+      placeholder: "2026-08-25"
+    validations:
+      required: true
+
+  - type: input
+    id: restaurant
+    attributes:
+      label: Restaurant name
+    validations:
+      required: true
+
+  - type: input
+    id: address
+    attributes:
+      label: Address
+      description: Full address, or a cross street if that's all you remember. The map pin is placed automatically — no coordinates needed.
+      placeholder: "1495 W Broadway, Vancouver, BC"
+    validations:
+      required: true
+
+  - type: textarea
+    id: dishes
+    attributes:
+      label: Dishes
+      description: >
+        This is your "add dish" box — one dish per block. For each dish: type the
+        dish name on its own line, then drag/paste its photo right under that (optional),
+        then your thoughts. Leave a blank line, then start the next dish the same way.
+        Add as many dishes as you tried.
+      placeholder: |
+        Har Gow
+        [paste photo here]
+        Wrappers were thin, didn't tear. Best I've had this year.
+
+        Char Siu Bao
+        [paste photo here]
+        A touch too sweet for me, but the table loved it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: The verdict
+      description: Your overall take — vibe, service, would you go back. Be honest.
+    validations:
+      required: false
