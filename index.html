@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Order Slip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root {
+    --paper: #EFE6D8;
+    --paper-dark: #E3D8C4;
+    --ink: #24211D;
+    --seal: #B23A2E;
+    --bamboo: #6B7F5B;
+    --steel: #8C8578;
+    --gold: #C08A34;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    background-image:
+      radial-gradient(var(--steel) 0.5px, transparent 0.5px);
+    background-size: 18px 18px;
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    padding: 48px 24px 24px;
+    text-align: center;
+    border-bottom: 3px double var(--ink);
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+
+  header p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--steel);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 8px 0 0;
+  }
+
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  nav button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 2px solid var(--ink);
+    color: var(--ink);
+    padding: 8px 20px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+
+  nav button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  main { max-width: 780px; margin: 0 auto; padding: 0 20px 80px; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .slip {
+    position: relative;
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    padding: 24px 24px 20px;
+    margin-bottom: 36px;
+    box-shadow: 3px 3px 0 rgba(36,33,29,0.15);
+  }
+
+  .slip::before {
+    content: "";
+    position: absolute;
+    top: -8px; left: 0; right: 0;
+    height: 8px;
+    background-image: radial-gradient(var(--paper) 3px, transparent 3px);
+    background-size: 16px 16px;
+    background-position: 0 -4px;
+  }
+
+  .slip-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px dashed var(--steel);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+
+  .slip-restaurant {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin: 0 0 4px;
+  }
+
+  .slip-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--steel);
+  }
+
+  .stamp {
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    border: 2.5px solid var(--seal);
+    border-radius: 50%;
+    color: var(--seal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    transform: rotate(-8deg);
+    opacity: 0.85;
+  }
+
+  .dishes { list-style: none; padding: 0; margin: 0 0 14px; }
+  .dishes li {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.92rem;
+    padding: 3px 0;
+  }
+  .dishes li::before { content: "☑ "; color: var(--bamboo); }
+
+  .notes {
+    font-size: 0.98rem;
+    line-height: 1.55;
+    margin: 0 0 14px;
+  }
+
+  .thumbs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .thumbs img {
+    width: 84px; height: 84px;
+    object-fit: cover;
+    border: 1.5px solid var(--ink);
+  }
+
+  .empty {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--steel);
+    padding: 60px 20px;
+    border: 2px dashed var(--steel);
+  }
+
+  #map { height: 560px; border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 rgba(36,33,29,0.15); }
+
+  .leaflet-popup-content-wrapper {
+    background: var(--paper-dark);
+    border-radius: 2px;
+    font-family: 'Work Sans', sans-serif;
+  }
+  .popup-title { font-family: 'Zilla Slab', serif; font-weight: 700; font-size: 1.05rem; margin: 0 0 4px; }
+  .popup-date { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--steel); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Order Slip</h1>
+  <p>a running record of what got ordered, and what I thought</p>
+</header>
+
+<nav>
+  <button id="btn-feed" class="active">Feed</button>
+  <button id="btn-map">Map</button>
+</nav>
+
+<main>
+  <section id="view-feed" class="view active"></section>
+  <section id="view-map" class="view">
+    <div id="map"></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  let entries = [];
+  let map, markerLayer;
+
+  function fmtDate(d) {
+    if (!d) return "";
+    const dt = new Date(d + "T00:00:00");
+    if (isNaN(dt)) return d;
+    return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function renderFeed() {
+    const el = document.getElementById('view-feed');
+    if (!entries.length) {
+      el.innerHTML = `<div class="empty">No visits logged yet — the first order slip goes here.</div>`;
+      return;
+    }
+    const sorted = [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    el.innerHTML = sorted.map(e => `
+      <article class="slip">
+        <div class="slip-top">
+          <div>
+            <p class="slip-restaurant">${escapeHtml(e.restaurant || "Unnamed spot")}</p>
+            <p class="slip-date">${fmtDate(e.date)}</p>
+          </div>
+          <div class="stamp">${e.rating ? e.rating + '/5' : '—'}</div>
+        </div>
+        ${e.dishes && e.dishes.length ? `<ul class="dishes">${e.dishes.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul>` : ''}
+        ${e.notes ? `<p class="notes">${escapeHtml(e.notes)}</p>` : ''}
+        ${e.images && e.images.length ? `<div class="thumbs">${e.images.map(src => `<img src="${src}" loading="lazy">`).join('')}</div>` : ''}
+      </article>
+    `).join('');
+  }
+
+  function renderMap() {
+    if (!map) {
+      map = L.map('map').setView([49.2608, -123.1139], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+      markerLayer = L.layerGroup().addTo(map);
+    }
+    markerLayer.clearLayers();
+    const pts = entries.filter(e => e.lat && e.lng);
+    pts.forEach(e => {
+      const m = L.circleMarker([e.lat, e.lng], {
+        radius: 8,
+        color: '#24211D',
+        weight: 1.5,
+        fillColor: '#B23A2E',
+        fillOpacity: 0.85
+      }).addTo(markerLayer);
+      m.bindPopup(`<p class="popup-title">${escapeHtml(e.restaurant || "Unnamed spot")}</p><p class="popup-date">${fmtDate(e.date)} · ${e.rating || '—'}/5</p>`);
+    });
+    if (pts.length) {
+      const bounds = L.latLngBounds(pts.map(e => [e.lat, e.lng]));
+      map.fitBounds(bounds.pad(0.2));
+    }
+    setTimeout(() => map.invalidateSize(), 50);
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  document.getElementById('btn-feed').addEventListener('click', () => switchView('feed'));
+  document.getElementById('btn-map').addEventListener('click', () => switchView('map'));
+
+  function switchView(name) {
+    document.getElementById('view-feed').classList.toggle('active', name === 'feed');
+    document.getElementById('view-map').classList.toggle('active', name === 'map');
+    document.getElementById('btn-feed').classList.toggle('active', name === 'feed');
+    document.getElementById('btn-map').classList.toggle('active', name === 'map');
+    if (name === 'map') renderMap();
+  }
+
+  fetch('entries.json')
+    .then(r => r.json())
+    .then(data => {
+      entries = data;
+      renderFeed();
+    })
+    .catch(() => {
+      document.getElementById('view-feed').innerHTML = `<div class="empty">Couldn't load entries.json</div>`;
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "sample-1",
+    "date": "2026-08-12",
+    "restaurant": "Golden Court Seafood",
+    "dishes": ["Har Gow", "Char Siu Bao", "Turnip Cake"],
+    "rating": 4,
+    "lat": 49.2608,
+    "lng": -123.1139,
+    "notes": "Har gow wrappers were thin and didn't tear. Char siu bao a touch too sweet for my taste but the crowd loved it. Would come back for the turnip cake alone.",
+    "images": []
+  },
+  {
+    "id": "sample-2",
+    "date": "2026-07-30",
+    "restaurant": "Jade Dynasty",
+    "dishes": ["Rice Noodle Roll", "Chicken Feet", "Egg Tart"],
+    "rating": 3,
+    "lat": 49.2497,
+    "lng": -123.1193,
+    "notes": "Solid but unremarkable. Egg tart crust was flaky and warm though, no complaints there. Service was slow on a Sunday.",
+    "images": []
+  }
+]
