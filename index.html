@@ -223,11 +223,27 @@
   let entries = [];
   let map, markerLayer;
 
-  function fmtDate(d) {
-    if (!d) return "";
-    const dt = new Date(d + "T00:00:00");
-    if (isNaN(dt)) return d;
-    return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  // Accepts "November 1, 2025", "2026-08-12", "Nov 1 2025", etc.
+  // Returns a sortable ISO string (yyyy-mm-dd), or the raw string as a fallback.
+  function sortKey(dateStr) {
+    if (!dateStr) return "";
+    const t = Date.parse(dateStr);
+    if (!isNaN(t)) return new Date(t).toISOString().slice(0, 10);
+    return dateStr;
+  }
+
+  // Displays ISO-style dates ("2026-08-12") as long human dates.
+  // Anything already human-typed ("November 1, 2025") is shown exactly as entered.
+  function displayDate(dateStr) {
+    if (!dateStr) return "";
+    const isIso = /^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim());
+    if (isIso) {
+      const dt = new Date(dateStr + "T00:00:00");
+      if (!isNaN(dt)) {
+        return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      }
+    }
+    return dateStr;
   }
 
   function renderDish(d) {
@@ -254,12 +270,12 @@
       el.innerHTML = `<div class="empty">No visits logged yet.</div>`;
       return;
     }
-    const sorted = [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const sorted = [...entries].sort((a, b) => sortKey(b.date).localeCompare(sortKey(a.date)));
     el.innerHTML = sorted.map(e => `
       <article class="entry">
         <div class="entry-top">
           <p class="entry-restaurant">${escapeHtml(e.restaurant || "Unnamed spot")}</p>
-          <p class="entry-meta">${fmtDate(e.date)}${e.address ? ' · ' + escapeHtml(e.address) : ''}</p>
+          <p class="entry-meta">${displayDate(e.date)}${e.address ? ' · ' + escapeHtml(e.address) : ''}</p>
         </div>
         ${e.dishes && e.dishes.length ? `<div class="dishes-grid">${e.dishes.map(renderDish).join('')}</div>` : ''}
         ${e.notes ? `
@@ -291,7 +307,7 @@
         fillColor: '#A6543C',
         fillOpacity: 0.85
       }).addTo(markerLayer);
-      m.bindPopup(`<p class="popup-title">${escapeHtml(e.restaurant || "Unnamed spot")}</p><p class="popup-meta">${fmtDate(e.date)}</p>`);
+      m.bindPopup(`<p class="popup-title">${escapeHtml(e.restaurant || "Unnamed spot")}</p><p class="popup-meta">${displayDate(e.date)}</p>`);
     });
     if (pts.length) {
       const bounds = L.latLngBounds(pts.map(e => [e.lat, e.lng]));
