@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dim Sum — Food Log</title>
+<title>Dim Sum Yum Yum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -15,6 +15,12 @@
     --rule: #E1D8C8;
     --accent: #A6543C;
     --muted: #8A8275;
+    --danger-bg: #F5DCD8;
+    --danger-text: #7A2020;
+    --danger-border: #B85C4F;
+    --gold-bg: #FCEFD1;
+    --gold-text: #8A5A12;
+    --gold-border: #C08A34;
   }
 
   * { box-sizing: border-box; }
@@ -35,7 +41,7 @@
   header h1 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
-    font-size: clamp(2rem, 5vw, 2.6rem);
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
     margin: 0;
     letter-spacing: 0.3px;
   }
@@ -52,7 +58,7 @@
     gap: 8px;
     padding-bottom: 32px;
     border-bottom: 1px solid var(--rule);
-    margin-bottom: 44px;
+    margin-bottom: 36px;
   }
 
   nav button {
@@ -77,6 +83,39 @@
   .view { display: none; }
   .view.active { display: block; }
 
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+
+  .sort-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .sort-btn {
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--muted);
+    padding: 5px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+  }
+
+  .sort-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
   .entry {
     padding: 36px 0;
     border-bottom: 1px solid var(--rule);
@@ -96,6 +135,34 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.78rem;
     color: var(--muted);
+  }
+
+  .rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--rule);
+    color: var(--accent);
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .rating-0 {
+    border-color: var(--danger-border);
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    font-weight: 600;
+  }
+
+  .rating-6 {
+    border-color: var(--gold-border);
+    background: linear-gradient(135deg, var(--gold-bg), #F3DBA0);
+    color: var(--gold-text);
+    font-weight: 600;
   }
 
   .dishes-grid {
@@ -202,17 +269,24 @@
 <body>
 
 <header>
-  <h1>Dim Sum</h1>
-  <p>honest, unfiltered notes on what I ate</p>
+  <h1>Dim Sum Yum Yum</h1>
+  <p>Just a boi's thoughts</p>
 </header>
 
 <nav>
-  <button id="btn-feed" class="active">Feed</button>
+  <button id="btn-feed" class="active">Reviews</button>
   <button id="btn-map">Map</button>
 </nav>
 
 <main>
-  <section id="view-feed" class="view active"></section>
+  <section id="view-feed" class="view active">
+    <div class="sort-bar">
+      <span class="sort-label">Sort by</span>
+      <button id="sort-date" class="sort-btn active">Date</button>
+      <button id="sort-rating" class="sort-btn">Rating</button>
+    </div>
+    <div id="entries-list"></div>
+  </section>
   <section id="view-map" class="view">
     <div id="map"></div>
   </section>
@@ -222,9 +296,8 @@
 <script>
   let entries = [];
   let map, markerLayer;
+  let currentSort = 'date';
 
-  // Accepts "November 1, 2025", "2026-08-12", "Nov 1 2025", etc.
-  // Returns a sortable ISO string (yyyy-mm-dd), or the raw string as a fallback.
   function sortKey(dateStr) {
     if (!dateStr) return "";
     const t = Date.parse(dateStr);
@@ -232,8 +305,6 @@
     return dateStr;
   }
 
-  // Displays ISO-style dates ("2026-08-12") as long human dates.
-  // Anything already human-typed ("November 1, 2025") is shown exactly as entered.
   function displayDate(dateStr) {
     if (!dateStr) return "";
     const isIso = /^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim());
@@ -244,6 +315,17 @@
       }
     }
     return dateStr;
+  }
+
+  function starString(r, max = 6) {
+    return '★'.repeat(r) + '☆'.repeat(max - r);
+  }
+
+  function ratingBadge(r) {
+    if (typeof r !== 'number' || isNaN(r)) return '';
+    if (r === 0) return `<span class="rating rating-0">✕ 0/6 — hard pass</span>`;
+    if (r === 6) return `<span class="rating rating-6">${starString(6)} 6/6 — perfect</span>`;
+    return `<span class="rating">${starString(r)} ${r}/6</span>`;
   }
 
   function renderDish(d) {
@@ -265,17 +347,26 @@
   }
 
   function renderFeed() {
-    const el = document.getElementById('view-feed');
+    const el = document.getElementById('entries-list');
     if (!entries.length) {
       el.innerHTML = `<div class="empty">No visits logged yet.</div>`;
       return;
     }
-    const sorted = [...entries].sort((a, b) => sortKey(b.date).localeCompare(sortKey(a.date)));
+    const sorted = [...entries].sort((a, b) => {
+      if (currentSort === 'rating') {
+        const ra = typeof a.rating === 'number' ? a.rating : -1;
+        const rb = typeof b.rating === 'number' ? b.rating : -1;
+        if (rb !== ra) return rb - ra;
+        return sortKey(b.date).localeCompare(sortKey(a.date));
+      }
+      return sortKey(b.date).localeCompare(sortKey(a.date));
+    });
     el.innerHTML = sorted.map(e => `
       <article class="entry">
         <div class="entry-top">
           <p class="entry-restaurant">${escapeHtml(e.restaurant || "Unnamed spot")}</p>
           <p class="entry-meta">${displayDate(e.date)}${e.address ? ' · ' + escapeHtml(e.address) : ''}</p>
+          ${ratingBadge(e.rating)}
         </div>
         ${e.dishes && e.dishes.length ? `<div class="dishes-grid">${e.dishes.map(renderDish).join('')}</div>` : ''}
         ${e.notes ? `
@@ -324,6 +415,15 @@
 
   document.getElementById('btn-feed').addEventListener('click', () => switchView('feed'));
   document.getElementById('btn-map').addEventListener('click', () => switchView('map'));
+  document.getElementById('sort-date').addEventListener('click', () => setSort('date'));
+  document.getElementById('sort-rating').addEventListener('click', () => setSort('rating'));
+
+  function setSort(mode) {
+    currentSort = mode;
+    document.getElementById('sort-date').classList.toggle('active', mode === 'date');
+    document.getElementById('sort-rating').classList.toggle('active', mode === 'rating');
+    renderFeed();
+  }
 
   function switchView(name) {
     document.getElementById('view-feed').classList.toggle('active', name === 'feed');
@@ -340,7 +440,7 @@
       renderFeed();
     })
     .catch(() => {
-      document.getElementById('view-feed').innerHTML = `<div class="empty">Couldn't load entries.json</div>`;
+      document.getElementById('entries-list').innerHTML = `<div class="empty">Couldn't load entries.json</div>`;
     });
 </script>
 
