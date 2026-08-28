@@ -46,10 +46,11 @@
     letter-spacing: 0.3px;
   }
 
-  header p {
-    font-size: 0.95rem;
+   header p {
+    font-size: 1.15rem;
+    font-weight: 500;
     color: var(--muted);
-    margin: 8px 0 0;
+    margin: 10px 0 0;
   }
 
   nav {
@@ -321,11 +322,11 @@
     return '★'.repeat(r) + '☆'.repeat(max - r);
   }
 
-  function ratingBadge(r) {
+   function ratingBadge(r) {
     if (typeof r !== 'number' || isNaN(r)) return '';
-    if (r === 0) return `<span class="rating rating-0">✕ 0/6 — hard pass</span>`;
-    if (r === 6) return `<span class="rating rating-6">${starString(6)} 6/6 — perfect</span>`;
-    return `<span class="rating">${starString(r)} ${r}/6</span>`;
+    if (r === 0) return `<span class="rating rating-0">✕</span>`;
+    if (r === 6) return `<span class="rating rating-6">${starString(6)}</span>`;
+    return `<span class="rating">${starString(r)}</span>`;
   }
 
   function renderDish(d) {
