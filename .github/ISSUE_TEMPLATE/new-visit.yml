@@ -28,6 +28,15 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: rating
+    attributes:
+      label: Rating
+      description: 0 to 6 — 0 means it was a disaster, 6 means it was perfect.
+      options: ["0", "1", "2", "3", "4", "5", "6"]
+    validations:
+      required: true
+
   - type: textarea
     id: dishes
     attributes:
