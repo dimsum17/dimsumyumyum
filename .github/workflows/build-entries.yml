@@ -4,6 +4,10 @@ on:
   issues:
     types: [opened, edited]
 
+concurrency:
+  group: entries-json-writer
+  cancel-in-progress: false
+
 permissions:
   contents: write
   issues: write
@@ -14,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Parse issue, geocode address, update entries.json
+      - name: Parse issue and update entries.json
         uses: actions/github-script@v7
         with:
           script: |
@@ -61,23 +65,6 @@ jobs:
               return { name, thoughts: textLines.join(" ").trim(), images };
             });
 
-            let lat = null, lng = null;
-            if (address) {
-              try {
-                const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
-                const res = await fetch(url, {
-                  headers: { "User-Agent": "personal-food-blog-bot/1.0 (github actions)" }
-                });
-                const data = await res.json();
-                if (data && data[0]) {
-                  lat = parseFloat(data[0].lat);
-                  lng = parseFloat(data[0].lon);
-                }
-              } catch (err) {
-                console.log("Geocoding failed:", err.message);
-              }
-            }
-
             const entriesPath = "entries.json";
             let entries = [];
             if (fs.existsSync(entriesPath)) {
@@ -85,8 +72,10 @@ jobs:
             }
 
             const id = `issue-${context.payload.issue.number}`;
-            const newEntry = { id, date, restaurant, address, lat, lng, mealType, rating, dishes, notes };
             const existingIdx = entries.findIndex(e => e.id === id);
+            const prevCoords = existingIdx >= 0 ? { lat: entries[existingIdx].lat, lng: entries[existingIdx].lng } : { lat: null, lng: null };
+
+            const newEntry = { id, date, restaurant, address, lat: prevCoords.lat, lng: prevCoords.lng, mealType, rating, dishes, notes };
             if (existingIdx >= 0) {
               entries[existingIdx] = newEntry;
             } else {
@@ -96,21 +85,13 @@ jobs:
             entries.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
             fs.writeFileSync(entriesPath, JSON.stringify(entries, null, 2) + "\n");
 
-            if (!lat && address) {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.issue.number,
-                body: "Heads up — I couldn't find that address on the map, so this entry was added without a pin. Edit this issue with a more specific address to try again."
-              });
-            }
-
       - name: Commit and push
         run: |
           git config user.name "food-blog-bot"
           git config user.email "actions@github.com"
           git add entries.json
           git diff --staged --quiet || git commit -m "Add/update entry from issue #${{ github.event.issue.number }}"
+          git pull --rebase
           git push
 
       - name: Close issue
