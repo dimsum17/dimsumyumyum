@@ -21,8 +21,6 @@ jobs:
             const fs = require('fs');
             const body = context.payload.issue.body || "";
 
-            // Only process issues that actually came from the New Visit form —
-            // detected by the presence of this field, not by a label.
             if (!body.includes("### Restaurant name")) {
               console.log("Not a visit submission, skipping.");
               return;
@@ -39,10 +37,12 @@ jobs:
             const date = field("Date");
             const restaurant = field("Restaurant name");
             const address = field("Address");
+            const mealType = field("Meal Type");
+            const ratingRaw = field("Rating");
+            const rating = ratingRaw !== "" ? parseFloat(ratingRaw) : null;
             const dishesRaw = field("Dishes");
             const notes = field("The verdict");
-            const ratingRaw = field("Rating");
-            const rating = ratingRaw !== "" ? parseInt(ratingRaw, 10) : null;
+
             const blocks = dishesRaw.split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean);
             const dishes = blocks.map(block => {
               const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
@@ -85,7 +85,7 @@ jobs:
             }
 
             const id = `issue-${context.payload.issue.number}`;
-            const newEntry = { id, date, restaurant, address, lat, lng, rating, dishes, notes };
+            const newEntry = { id, date, restaurant, address, lat, lng, mealType, rating, dishes, notes };
             const existingIdx = entries.findIndex(e => e.id === id);
             if (existingIdx >= 0) {
               entries[existingIdx] = newEntry;
