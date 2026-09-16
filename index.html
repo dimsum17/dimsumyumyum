@@ -286,6 +286,14 @@
     padding: 60px 20px;
   }
 
+  .map-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
   #map { height: 560px; border-radius: 6px; overflow: hidden; }
 
   .leaflet-popup-content-wrapper {
@@ -319,6 +327,7 @@
     <div id="entries-list"></div>
   </section>
   <section id="view-map" class="view">
+    <p class="map-note">Pins load in one at a time — give it a few seconds</p>
     <div id="map"></div>
   </section>
 </main>
@@ -415,7 +424,51 @@
     `).join('');
   }
 
-  function renderMap() {
+  // --- Client-side geocoding (runs in the visitor's browser, cached locally) ---
+  function geocodeCacheGet(address) {
+    try {
+      const raw = localStorage.getItem('geocode:' + address);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function geocodeCacheSet(address, coords) {
+    try { localStorage.setItem('geocode:' + address, JSON.stringify(coords)); } catch (e) {}
+  }
+  async function geocodeAddress(address) {
+    const cached = geocodeCacheGet(address);
+    if (cached) return cached;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data[0]) {
+        const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+        geocodeCacheSet(address, coords);
+        return coords;
+      }
+    } catch (err) {
+      console.log('Geocoding failed for', address, err);
+    }
+    return null;
+  }
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function addMarker(e, lat, lng) {
+    const m = L.circleMarker([lat, lng], {
+      radius: 7, color: '#26231F', weight: 1.5,
+      fillColor: '#A6543C', fillOpacity: 0.85
+    }).addTo(markerLayer);
+    m.bindPopup(`<p class="popup-title">${escapeHtml(e.restaurant || "Unnamed spot")}</p><p class="popup-meta">${displayDate(e.date)}</p>`);
+  }
+
+  function fitMapToPoints(pts) {
+    if (pts.length) {
+      const bounds = L.latLngBounds(pts.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds.pad(0.2));
+    }
+  }
+
+  async function renderMap() {
     if (!map) {
       map = L.map('map').setView([49.2608, -123.1139], 12);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -425,22 +478,27 @@
       markerLayer = L.layerGroup().addTo(map);
     }
     markerLayer.clearLayers();
-    const pts = entries.filter(e => e.lat && e.lng);
-    pts.forEach(e => {
-      const m = L.circleMarker([e.lat, e.lng], {
-        radius: 7,
-        color: '#26231F',
-        weight: 1.5,
-        fillColor: '#A6543C',
-        fillOpacity: 0.85
-      }).addTo(markerLayer);
-      m.bindPopup(`<p class="popup-title">${escapeHtml(e.restaurant || "Unnamed spot")}</p><p class="popup-meta">${displayDate(e.date)}</p>`);
+
+    const withCoords = [];
+    const needsGeocode = [];
+    entries.forEach(e => {
+      if (e.lat && e.lng) withCoords.push({ ...e });
+      else if (e.address) needsGeocode.push(e);
     });
-    if (pts.length) {
-      const bounds = L.latLngBounds(pts.map(e => [e.lat, e.lng]));
-      map.fitBounds(bounds.pad(0.2));
-    }
+
+    withCoords.forEach(e => addMarker(e, e.lat, e.lng));
+    fitMapToPoints(withCoords);
     setTimeout(() => map.invalidateSize(), 50);
+
+    for (const e of needsGeocode) {
+      const coords = await geocodeAddress(e.address);
+      if (coords) {
+        addMarker(e, coords.lat, coords.lng);
+        withCoords.push({ lat: coords.lat, lng: coords.lng });
+        fitMapToPoints(withCoords);
+      }
+      await sleep(1100);
+    }
   }
 
   function escapeHtml(str) {
