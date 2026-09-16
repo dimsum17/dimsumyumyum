@@ -23,8 +23,16 @@ body:
     id: address
     attributes:
       label: Address
-      description: Full address, or a cross street if that's all you remember. The map pin is placed automatically — no coordinates needed.
+      description: Full address, including city (and country if outside Canada). The map pin is placed automatically — no coordinates needed.
       placeholder: "1495 W Broadway, Vancouver, BC"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: meal_type
+    attributes:
+      label: Meal Type
+      options: ["Lunch", "Dinner", "Snacks"]
     validations:
       required: true
 
@@ -32,8 +40,8 @@ body:
     id: rating
     attributes:
       label: Rating
-      description: 0 to 6 — 0 means it was a disaster, 6 means it was perfect.
-      options: ["0", "1", "2", "3", "4", "5", "6"]
+      description: 1 to 5 in half-star steps. 0 is reserved for a total disaster, 6 for pure perfection.
+      options: ["0", "1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5", "6"]
     validations:
       required: true
 
