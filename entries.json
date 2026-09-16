@@ -1,23 +1,5 @@
 [
   {
-    "id": "issue-5",
-    "date": "November 2, 2007",
-    "restaurant": "Test Again",
-    "address": "889 West 12th Avenue, Vancouver",
-    "lat": 49.2610667,
-    "lng": -123.1566534,
-    "mealType": "Snacks",
-    "rating": 4,
-    "dishes": [
-      {
-        "name": "test",
-        "thoughts": "testing wow so good",
-        "images": []
-      }
-    ],
-    "notes": "yaaay"
-  },
-  {
     "id": "issue-4",
     "date": "Jan 1, 2021",
     "restaurant": "Test Visit",
