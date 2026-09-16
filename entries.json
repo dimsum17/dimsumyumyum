@@ -15,5 +15,23 @@
       }
     ],
     "notes": "Super good"
+  },
+  {
+    "id": "issue-4",
+    "date": "Jan 1, 2021",
+    "restaurant": "Test Visit",
+    "address": "4474 W 18th Ave, Burnaby",
+    "lat": null,
+    "lng": null,
+    "mealType": "Lunch",
+    "rating": 6,
+    "dishes": [
+      {
+        "name": "Dim Sum",
+        "thoughts": "yum yum",
+        "images": []
+      }
+    ],
+    "notes": "excellent"
   }
 ]
