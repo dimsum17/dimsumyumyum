@@ -18,23 +18,6 @@
     "notes": "yaaay"
   },
   {
-    "id": "issue-3",
-    "date": "January 17, 2008",
-    "restaurant": "Tim's Place",
-    "address": "522 West 37th Avenue, Vancouver",
-    "lat": 49.238151,
-    "lng": -123.1454139,
-    "rating": 6,
-    "dishes": [
-      {
-        "name": "Chicken Bao",
-        "thoughts": "Very tasty dish",
-        "images": []
-      }
-    ],
-    "notes": "Super good"
-  },
-  {
     "id": "issue-4",
     "date": "Jan 1, 2021",
     "restaurant": "Test Visit",
