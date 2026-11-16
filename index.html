@@ -84,83 +84,39 @@
   .view { display: none; }
   .view.active { display: block; }
 
-  .filter-bar {
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 30px;
   }
 
-  .filter-label {
-    display: block;
+  .sort-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 0.7rem;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 10px;
+    margin-right: 2px;
   }
 
-  .filter-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .chip {
+  .sort-btn {
     font-family: 'Work Sans', sans-serif;
     font-size: 0.82rem;
     font-weight: 500;
     background: transparent;
     border: 1px solid var(--rule);
-    color: var(--ink);
-    padding: 6px 12px;
+    color: var(--muted);
+    padding: 6px 14px;
     border-radius: 14px;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
   }
 
-  .chip-count {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-  }
-
-  .chip:hover:not(:disabled):not(.active) {
-    border-color: var(--ink);
-  }
-
-  .chip.active {
+  .sort-btn.active {
     background: var(--ink);
     color: var(--paper);
     border-color: var(--ink);
-  }
-  .chip.active .chip-count { color: var(--paper); opacity: 0.7; }
-
-  .chip:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
-  .chip-zero {
-    border-color: var(--danger-border);
-    color: var(--danger-text);
-    background: var(--danger-bg);
-  }
-  .chip-zero.active {
-    background: var(--danger-text);
-    border-color: var(--danger-text);
-    color: #fff;
-  }
-
-  .chip-six {
-    border-color: var(--gold-border);
-    color: var(--gold-text);
-    background: var(--gold-bg);
-  }
-  .chip-six.active {
-    background: var(--gold-text);
-    border-color: var(--gold-text);
-    color: #fff;
   }
 
   .entry {
@@ -365,9 +321,11 @@
 
 <main>
   <section id="view-feed" class="view active">
-    <div class="filter-bar">
-      <span class="filter-label">Filter by stars</span>
-      <div id="star-filters" class="filter-chips"></div>
+    <div class="sort-bar" id="sort-bar">
+      <span class="sort-label">Sort by</span>
+      <button class="sort-btn active" data-sort="newest">Newest</button>
+      <button class="sort-btn" data-sort="high">Highest rated</button>
+      <button class="sort-btn" data-sort="low">Lowest rated</button>
     </div>
     <div id="entries-list"></div>
   </section>
@@ -381,9 +339,7 @@
 <script>
   let entries = [];
   let map, markerLayer;
-  let activeFilter = 'all';
-
-  const STAR_VALUES = [0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6];
+  let currentSort = 'newest';
 
   function sortKey(dateStr) {
     if (!dateStr) return "";
@@ -435,41 +391,20 @@
     `;
   }
 
-  // --- Star filter chips ---
-  function chipLabel(v) {
-    if (v === 0) return '✕ 0';
-    if (v === 6) return '★ 6';
-    return v + ' ★';
-  }
+  function sortEntries(list) {
+    return [...list].sort((a, b) => {
+      const byDate = sortKey(b.date).localeCompare(sortKey(a.date));
+      if (currentSort === 'newest') return byDate;
 
-  function renderFilters() {
-    const wrap = document.getElementById('star-filters');
-    const counts = {};
-    entries.forEach(e => {
-      if (typeof e.rating === 'number') counts[e.rating] = (counts[e.rating] || 0) + 1;
+      const ra = typeof a.rating === 'number' ? a.rating : null;
+      const rb = typeof b.rating === 'number' ? b.rating : null;
+      if (ra === null && rb === null) return byDate;
+      if (ra === null) return 1;
+      if (rb === null) return -1;
+      if (ra === rb) return byDate;
+      return currentSort === 'high' ? rb - ra : ra - rb;
     });
-    const chips = [];
-    chips.push(`<button class="chip${activeFilter === 'all' ? ' active' : ''}" data-filter="all">All <span class="chip-count">${entries.length}</span></button>`);
-    STAR_VALUES.forEach(v => {
-      const n = counts[v] || 0;
-      const cls = ['chip'];
-      if (v === 0) cls.push('chip-zero');
-      if (v === 6) cls.push('chip-six');
-      if (activeFilter === v) cls.push('active');
-      chips.push(`<button class="${cls.join(' ')}" data-filter="${v}"${n === 0 ? ' disabled' : ''}>${chipLabel(v)} <span class="chip-count">${n}</span></button>`);
-    });
-    wrap.innerHTML = chips.join('');
   }
-
-  document.getElementById('star-filters').addEventListener('click', ev => {
-    const btn = ev.target.closest('.chip');
-    if (!btn || btn.disabled) return;
-    const val = btn.dataset.filter;
-    const next = val === 'all' ? 'all' : parseFloat(val);
-    activeFilter = (next === activeFilter) ? 'all' : next;
-    renderFilters();
-    renderFeed();
-  });
 
   function renderFeed() {
     const el = document.getElementById('entries-list');
@@ -477,18 +412,7 @@
       el.innerHTML = `<div class="empty">No visits logged yet.</div>`;
       return;
     }
-    let shown = [...entries];
-    if (activeFilter !== 'all') {
-      shown = shown.filter(e => e.rating === activeFilter);
-    }
-    shown.sort((a, b) => sortKey(b.date).localeCompare(sortKey(a.date)));
-
-    if (!shown.length) {
-      el.innerHTML = `<div class="empty">No reviews at this rating yet.</div>`;
-      return;
-    }
-
-    el.innerHTML = shown.map(e => `
+    el.innerHTML = sortEntries(entries).map(e => `
       <article class="entry">
         <div class="entry-top">
           <p class="entry-restaurant">${escapeHtml(e.restaurant || "Unnamed spot")}</p>
@@ -508,6 +432,16 @@
       </article>
     `).join('');
   }
+
+  document.getElementById('sort-bar').addEventListener('click', ev => {
+    const btn = ev.target.closest('.sort-btn');
+    if (!btn) return;
+    currentSort = btn.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      b.classList.toggle('active', b === btn);
+    });
+    renderFeed();
+  });
 
   // --- Client-side geocoding (runs in the visitor's browser, cached locally) ---
   function geocodeCacheGet(address) {
@@ -607,7 +541,6 @@
     .then(r => r.json())
     .then(data => {
       entries = data;
-      renderFilters();
       renderFeed();
     })
     .catch(() => {
